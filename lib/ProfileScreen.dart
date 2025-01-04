@@ -6,15 +6,17 @@ Future<Map<String, String>> fetchUserData(String token) async {
   final url = Uri.parse('http://server.bouspam.yusim.space/user/profile');
 
   final response = await http.get(url, headers: {
-    'Authorization': 'Bearer $token',
+    'Authorization': 'Bearer $token', // добавьте токен авторизации, если это необходимо
   });
 
   if (response.statusCode == 200) {
+    // Парсим данные с сервера
     final data = jsonDecode(response.body);
     return {
       'name': data['name'] ?? 'Unknown',
       'surname': data['surname'] ?? 'Unknown',
       'phone': data['phone'] ?? 'Unknown',
+      // Добавьте другие поля, которые вам нужно отобразить
     };
   } else {
     throw Exception('Failed to load user data');
@@ -58,6 +60,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Adicionar Informação',
           'enterInfo': 'Insira sua informação',
           'continue': 'Continuar',
+          'add': 'Adicionar', // Добавлено
+          'change': 'Mudar',  // Добавлено
         }[key]!;
       case 'fr':
         return {
@@ -72,6 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Ajouter des informations',
           'enterInfo': 'Entrez votre information',
           'continue': 'Continuer',
+          'add': 'Ajouter', // Добавлено
+          'change': 'Changer', // Добавлено
         }[key]!;
       case 'ht':
         return {
@@ -86,6 +92,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Ajoute enfòmasyon',
           'enterInfo': 'Antre enfòmasyon ou',
           'continue': 'Kontinye',
+          'add': 'Ajoute', // Добавлено
+          'change': 'Chanje', // Добавлено
         }[key]!;
       case 'es':
         return {
@@ -100,6 +108,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Agregar información',
           'enterInfo': 'Ingrese su información',
           'continue': 'Continuar',
+          'add': 'Agregar', // Добавлено
+          'change': 'Cambiar', // Добавлено
         }[key]!;
       case 'en':
       default:
@@ -115,9 +125,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Add Information',
           'enterInfo': 'Enter your information',
           'continue': 'Continue',
+          'add': 'Add', // Добавлено
+          'change': 'Change', // Добавлено
         }[key]!;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -264,7 +277,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   GestureDetector(
                     onTap: onTap,
                     child: Text(
-                      value,
+                      value == "Add"
+                          ? getText('add')
+                          : value,
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
                         color: value == "Add"
@@ -283,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _showChangePasswordDialog(context);
                 },
                 child: Text(
-                  'Change',
+                  getText('change'),
                   style: TextStyle(
                     fontSize: screenWidth * 0.035,
                     color: const Color.fromARGB(255, 187, 103, 0),

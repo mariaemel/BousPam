@@ -4,25 +4,81 @@ import 'package:flutter/material.dart';
 
 import 'VerificationScreen.dart';
 
-class PasswordRecoveryScreen extends StatelessWidget {
+
+class PasswordRecoveryScreen extends StatefulWidget {
   final String languageCode;
 
   const PasswordRecoveryScreen({required this.languageCode});
 
+  @override
+  _PasswordRecoveryScreenState createState() => _PasswordRecoveryScreenState();
+}
+
+class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
+  final _phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+
   String getText(String key) {
-    switch (languageCode) {
-      case 'pt':
-        return {'phone': 'Número de telefone', 'recoverPassword': 'Recuperar Senha'}[key]!;
-      case 'fr':
-        return {'phone': 'Numéro de téléphone', 'recoverPassword': 'Récupérer le mot de passe'}[key]!;
-      case 'es':
-        return {'phone': 'Número de teléfono', 'recoverPassword': 'Recuperar contraseña'}[key]!;
-      case 'ht':
-        return {'phone': 'Nimewo telefòn', 'recoverPassword': 'Rèstore modpas la'}[key]!;
-      case 'en':
-      default:
-        return {'phone': 'Phone number', 'recoverPassword': 'Recover Password'}[key]!;
-    }
+    final translations = {
+      'phone': {
+        'pt': 'Número de telefone',
+        'fr': 'Numéro de téléphone',
+        'es': 'Número de teléfono',
+        'ht': 'Nimewo telefòn',
+        'en': 'Phone number',
+      },
+      'recoverPassword': {
+        'pt': 'Recuperar Senha',
+        'fr': 'Récupérer le mot de passe',
+        'es': 'Recuperar contraseña',
+        'ht': 'Rèstore modpas la',
+        'en': 'Recover Password',
+      },
+      'phoneRequired': {
+        'pt': 'O número de telefone é obrigatório',
+        'fr': 'Le numéro de téléphone est obligatoire',
+        'es': 'El número de teléfono es obligatorio',
+        'ht': 'Nimewo telefòn obligatwa',
+        'en': 'Phone number is required',
+      },
+      'phoneInvalid': {
+        'pt': 'Insira um número de telefone válido',
+        'fr': 'Entrez un numéro de téléphone valide',
+        'es': 'Ingrese un número de teléfono válido',
+        'ht': 'Antre yon nimewo telefòn valab',
+        'en': 'Enter a valid phone number',
+      },
+      'passwordRequired': {
+        'pt': 'A senha é obrigatória',
+        'fr': 'Le mot de passe est obligatoire',
+        'es': 'La contraseña es obligatoria',
+        'ht': 'Modpas obligatwa',
+        'en': 'Password is required',
+      },
+      'passwordTooShort': {
+        'pt': 'A senha deve ter pelo menos 6 caracteres',
+        'fr': 'Le mot de passe doit contenir au moins 6 caractères',
+        'es': 'La contraseña debe tener al menos 6 caracteres',
+        'ht': 'Modpas dwe gen omwen 6 karaktè',
+        'en': 'Password must be at least 6 characters',
+      },
+      'passwordInvalid': {
+        'pt': 'A senha deve conter letras e números',
+        'fr': 'Le mot de passe doit contenir des lettres et des chiffres',
+        'es': 'La contraseña debe contener letras y números',
+        'ht': 'Modpas dwe gen lèt ak chif',
+        'en': 'Password must contain letters and numbers',
+      },
+      'passwordsDoNotMatch': {
+        'pt': 'As senhas não coincidem',
+        'fr': 'Les mots de passe ne correspondent pas',
+        'es': 'Las contraseñas no coinciden',
+        'ht': 'Modpas yo pa matche',
+        'en': 'Passwords do not match',
+      },
+    };
+    return translations[key]?[widget.languageCode] ?? translations[key]?['en'] ?? '';
   }
 
   @override
@@ -64,52 +120,72 @@ class PasswordRecoveryScreen extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey, width: 1),
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: getText('phone'),
-                      labelStyle: TextStyle(color: Colors.black),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: screenHeight * 0.01, horizontal: 10),
-                      border: InputBorder.none,
-                    ),
-                    keyboardType: TextInputType.phone,
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.05),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VerificationScreen(languageCode: languageCode),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 187, 103, 0),
-                    minimumSize: Size(double.infinity, screenHeight * 0.07),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    getText('recoverPassword'),
-                    style: TextStyle(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      fontSize: screenWidth * 0.05,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey, width: 1),
+                    ),
+                    child: TextFormField(
+                      controller: _phoneController,
+                      decoration: InputDecoration(
+                        labelText: getText('phone'),
+                        labelStyle: TextStyle(color: Colors.black),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: screenHeight * 0.01,
+                          horizontal: 10,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return getText('phoneRequired');
+                        }
+                        final phoneRegex = RegExp(r'^\+?[0-9]{10,15}$');
+                        if (!phoneRegex.hasMatch(value)) {
+                          return getText('phoneInvalid');
+                        }
+                        return null;
+                      },
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(height: screenHeight * 0.05),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                VerificationScreen(languageCode: widget.languageCode),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color.fromARGB(255, 187, 103, 0),
+                      minimumSize: Size(double.infinity, screenHeight * 0.07),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      getText('recoverPassword'),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: screenWidth * 0.05,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

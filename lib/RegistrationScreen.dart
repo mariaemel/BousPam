@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'MenuScreen.dart';
+import 'PasswordRecoveryScreen.dart';
 import 'ToggleButtonsContainer.dart';
-
 
 class RegistrationScreen extends StatefulWidget {
 
@@ -130,7 +130,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
-
   // Регистрация пользователя
   Future<void> handleRegistration() async {
     final error = validateRegistrationForm();
@@ -166,6 +165,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   // Валидация формы логина
   String? validateLoginForm() {
     if (loginPhoneController.text.isEmpty) return 'Please enter your phone number.';
+    if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(loginPhoneController.text)) return 'Invalid phone number format.';
     if (loginPasswordController.text.isEmpty) return 'Please enter your password.';
     return null;
   }
@@ -175,14 +175,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      if (response.body.contains("Incorrect phone number or password")) {
-        throw Exception('Неверный номер телефона или пароль');
-      }
-      return true;
+      return true; // Успешный вход
+    } else if (response.statusCode == 401) {
+      throw Exception('Неверный номер телефона или пароль');
     } else {
-      throw Exception('Ошибка входа: ${response.body}');
+      throw Exception('Ошибка сервера: ${response.statusCode}');
     }
   }
+
 
   // Логин пользователя
   Future<void> handleLogin() async {
@@ -215,79 +215,102 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+
   // Создание формы логина или регистрации
   Widget buildForm(double screenWidth, double screenHeight) {
     return Container(
       width: screenWidth * 0.65,
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
           // Поля для регистрации
           if (isRegistrationSelected) ...[
-      TextField(
-      controller: nameController,
-      decoration: buildInputDecoration(getText('name')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: surnameController,
-    decoration: buildInputDecoration(getText('surname')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: registerPhoneController,
-    decoration: buildInputDecoration(getText('phone')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: registerPasswordController,
-    obscureText: true,
-    decoration: buildInputDecoration(getText('password')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: confirmPasswordController,
-    obscureText: true,
-    decoration: buildInputDecoration(getText('repeatPassword')),
-    ),
-    ],
+            TextField(
+              controller: nameController,
+              decoration: buildInputDecoration(getText('name')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: surnameController,
+              decoration: buildInputDecoration(getText('surname')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: registerPhoneController,
+              decoration: buildInputDecoration(getText('phone')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: registerPasswordController,
+              obscureText: true,
+              decoration: buildInputDecoration(getText('password')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: buildInputDecoration(getText('repeatPassword')),
+            ),
+          ],
 
-
-            // Поля для логина
-            if (!isRegistrationSelected) ...[
-              TextField(
-                controller: loginPhoneController,
-                decoration: buildInputDecoration(getText('phone')),
-              ),
-              SizedBox(height: screenHeight * 0.03),
-              TextField(
-                controller: loginPasswordController,
-                obscureText: true,
-                decoration: buildInputDecoration(getText('password')),
-              ),
-            ],
-
-            SizedBox(height: screenHeight * 0.05),
-
-            // Кнопка для логина/регистрации
-            ElevatedButton(
-              onPressed: isRegistrationSelected ? handleRegistration : handleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFBB6700),
-                minimumSize: Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                isRegistrationSelected ? getText('register') : getText('login'),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: screenWidth * 0.05,
+          // Поля для логина
+          if (!isRegistrationSelected) ...[
+            TextField(
+              controller: loginPhoneController,
+              decoration: buildInputDecoration(getText('phone')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: loginPasswordController,
+              obscureText: true,
+              decoration: buildInputDecoration(getText('password')),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          PasswordRecoveryScreen(languageCode: widget.languageCode),
+                    ),
+                  );
+                },
+                child: Text(
+                  getText('forgotPassword'),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: screenWidth * 0.04,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white,
+                  ),
                 ),
               ),
             ),
           ],
+
+          SizedBox(height: screenHeight * 0.05),
+
+          // Кнопка для логина/регистрации
+          ElevatedButton(
+            onPressed: isRegistrationSelected ? handleRegistration : handleLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFBB6700),
+              minimumSize: Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              isRegistrationSelected ? getText('register') : getText('login'),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: screenWidth * 0.05,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
