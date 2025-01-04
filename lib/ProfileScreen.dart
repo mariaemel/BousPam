@@ -21,7 +21,6 @@ Future<Map<String, String>> fetchUserData(String token) async {
   }
 }
 
-
 class ProfileScreen extends StatefulWidget {
   final String languageCode;
 
@@ -60,6 +59,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'continue': 'Continuar',
           'add': 'Adicionar',
           'change': 'Mudar',
+          'changePasswordTitle': 'Alterar Senha',
+          'oldPasswordLabel': 'Senha Antiga',
+          'newPasswordLabel': 'Nova Senha',
+          'repeatNewPasswordLabel': 'Repita a Nova Senha',
+          'saveButton': 'Salvar',
         }[key]!;
       case 'fr':
         return {
@@ -76,6 +80,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'continue': 'Continuer',
           'add': 'Ajouter',
           'change': 'Changer',
+          'changePasswordTitle': 'Changer le mot de passe',
+          'oldPasswordLabel': 'Ancien mot de passe',
+          'newPasswordLabel': 'Nouveau mot de passe',
+          'repeatNewPasswordLabel': 'Répétez le nouveau mot de passe',
+          'saveButton': 'Sauvegarder',
         }[key]!;
       case 'ht':
         return {
@@ -92,6 +101,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'continue': 'Kontinye',
           'add': 'Ajoute',
           'change': 'Chanje',
+          'changePasswordTitle': 'Chanje modpas',
+          'oldPasswordLabel': 'Vye modpas',
+          'newPasswordLabel': 'Nouvo modpas',
+          'repeatNewPasswordLabel': 'Repete nouvo modpas',
+          'saveButton': 'Sove',
         }[key]!;
       case 'es':
         return {
@@ -108,6 +122,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'continue': 'Continuar',
           'add': 'Agregar',
           'change': 'Cambiar',
+          'changePasswordTitle': 'Cambiar la contraseña',
+          'oldPasswordLabel': 'Contraseña antigua',
+          'newPasswordLabel': 'Nueva contraseña',
+          'repeatNewPasswordLabel': 'Repetir nueva contraseña',
+          'saveButton': 'Guardar',
         }[key]!;
       case 'en':
       default:
@@ -125,6 +144,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'continue': 'Continue',
           'add': 'Add',
           'change': 'Change',
+          'changePasswordTitle': 'Change Password',
+          'oldPasswordLabel': 'Old Password',
+          'newPasswordLabel': 'New Password',
+          'repeatNewPasswordLabel': 'Repeat New Password',
+          'saveButton': 'Save',
         }[key]!;
     }
   }
@@ -228,6 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
   Widget _buildProfileField(
       BuildContext context,
       String title,
@@ -387,7 +412,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
           title: Text(
-            'Changing the password',
+            getText('changePasswordTitle'),
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black,
@@ -399,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'Old password',
+                  labelText: getText('oldPasswordLabel'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
@@ -417,7 +442,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'New password',
+                  labelText: getText('newPasswordLabel'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
@@ -435,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'Repeat new password',
+                  labelText: getText('repeatNewPasswordLabel'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
@@ -460,8 +485,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: () {
                   Navigator.pop(context);
+                  // Add logic to save the new password here.
                 },
-                child: const Text('Save'),
+                child: Text(
+                  getText('saveButton'),
+                  style: const TextStyle(fontSize: 14),
+                ),
               ),
             ],
           ),

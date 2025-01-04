@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 
 import 'LanguageSelectionScreen.dart';
 
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(primaryColor: Colors.grey),
+      home: WelcomeScreen(),
+    );
+  }
+}
 
 class WelcomeScreen extends StatelessWidget {
   @override
