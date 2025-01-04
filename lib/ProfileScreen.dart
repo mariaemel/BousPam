@@ -58,6 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Adicionar Informação',
           'enterInfo': 'Insira sua informação',
           'continue': 'Continuar',
+          'add': 'Adicionar',
+          'change': 'Mudar',
         }[key]!;
       case 'fr':
         return {
@@ -72,6 +74,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Ajouter des informations',
           'enterInfo': 'Entrez votre information',
           'continue': 'Continuer',
+          'add': 'Ajouter',
+          'change': 'Changer',
         }[key]!;
       case 'ht':
         return {
@@ -86,6 +90,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Ajoute enfòmasyon',
           'enterInfo': 'Antre enfòmasyon ou',
           'continue': 'Kontinye',
+          'add': 'Ajoute',
+          'change': 'Chanje',
         }[key]!;
       case 'es':
         return {
@@ -100,6 +106,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Agregar información',
           'enterInfo': 'Ingrese su información',
           'continue': 'Continuar',
+          'add': 'Agregar',
+          'change': 'Cambiar',
         }[key]!;
       case 'en':
       default:
@@ -115,9 +123,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Add Information',
           'enterInfo': 'Enter your information',
           'continue': 'Continue',
+          'add': 'Add',
+          'change': 'Change',
         }[key]!;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -264,7 +275,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   GestureDetector(
                     onTap: onTap,
                     child: Text(
-                      value,
+                      value == "Add"
+                          ? getText('add')
+                          : value,
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
                         color: value == "Add"
@@ -283,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _showChangePasswordDialog(context);
                 },
                 child: Text(
-                  'Change',
+                  getText('change'),
                   style: TextStyle(
                     fontSize: screenWidth * 0.035,
                     color: const Color.fromARGB(255, 187, 103, 0),
@@ -447,7 +460,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: () {
                   Navigator.pop(context);
-                  // Add logic to save the new password here.
                 },
                 child: const Text('Save'),
               ),

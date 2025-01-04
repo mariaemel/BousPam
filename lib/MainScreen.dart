@@ -4,8 +4,9 @@ import 'package:http/http.dart' as http;
 
 class MainScreen extends StatefulWidget {
   final String languageCode;
+  final int userId;
 
-  MainScreen({required this.languageCode});
+  MainScreen({required this.languageCode, required this.userId});
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -13,16 +14,20 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   double _accountBalance = 0.0;
+  late int _userId;
 
   @override
   void initState() {
     super.initState();
+    _userId = widget.userId;
     _fetchAccountBalance();
   }
 
   Future<void> _fetchAccountBalance() async {
     try {
-      final response = await http.get(Uri.parse('http://server.bouspam.yusim.space/api/account_balance'));
+      final response = await http.get(
+        Uri.parse('http://server.bouspam.yusim.space/balance/$_userId'),
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -30,13 +35,40 @@ class _MainScreenState extends State<MainScreen> {
           _accountBalance = data['balance'];
         });
       } else {
-        throw Exception('Ошибка при загрузке данных');
+        throw Exception('Error fetching account balance');
       }
     } catch (e) {
       setState(() {
         _accountBalance = 0.0;
       });
-      print('Ошибка: $e');
+      print('Error: $e');
+    }
+  }
+
+  Future<Map<String, List<String>>> fetchHistory() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://server.bouspam.yusim.space/operations_user/$_userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List<dynamic>;
+        final Map<String, List<String>> groupedHistory = {};
+        for (var operation in data) {
+          final date = operation['date'];
+          final description = operation['description'];
+          if (!groupedHistory.containsKey(date)) {
+            groupedHistory[date] = [];
+          }
+          groupedHistory[date]?.add(description);
+        }
+        return groupedHistory;
+      } else {
+        throw Exception('Error fetching operations history');
+      }
+    } catch (e) {
+      print('Error: $e');
+      return {};
     }
   }
 
@@ -81,12 +113,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Future<Map<String, List<String>>> fetchHistory() async {
-    await Future.delayed(Duration(seconds: 1));
-    return {
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -102,7 +128,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.001),
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.01),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -211,10 +237,6 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _fetchAccountBalance,
-        child: Icon(Icons.refresh),
       ),
     );
   }

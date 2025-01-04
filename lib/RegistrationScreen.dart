@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'MenuScreen.dart';
+import 'PasswordRecoveryScreen.dart';
 import 'ToggleButtonsContainer.dart';
-
 
 class RegistrationScreen extends StatefulWidget {
 
@@ -17,20 +17,17 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  // Контроллеры для регистрации
   final nameController = TextEditingController();
   final surnameController = TextEditingController();
   final registerPhoneController = TextEditingController();
   final registerPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // Контроллеры для логина
   final loginPhoneController = TextEditingController();
   final loginPasswordController = TextEditingController();
 
-  bool isRegistrationSelected = true; // Управление режимом регистрации/логина
+  bool isRegistrationSelected = true;
 
-  // Получение текста с учетом языка
   String getText(String key) {
     switch (widget.languageCode) {
       case 'pt':
@@ -93,7 +90,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
 
-  // Валидация формы регистрации
   String? validateRegistrationForm() {
     if (nameController.text.isEmpty) return 'Please enter your name.';
     if (surnameController.text.isEmpty) return 'Please enter your surname.';
@@ -131,7 +127,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
 
-  // Регистрация пользователя
   Future<void> handleRegistration() async {
     final error = validateRegistrationForm();
     if (error != null) {
@@ -147,7 +142,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         registerPasswordController.text,
         confirmPasswordController.text,
       );
+
+      final userId = int.tryParse(result);
+
+      if (userId == null) {
+        throw Exception('Failed to parse user ID');
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('userId', userId);
+
       print("Registration successful: $result");
+      print(userId);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -163,9 +169,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
-  // Валидация формы логина
+
+
   String? validateLoginForm() {
     if (loginPhoneController.text.isEmpty) return 'Please enter your phone number.';
+    if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(loginPhoneController.text)) return 'Invalid phone number format.';
     if (loginPasswordController.text.isEmpty) return 'Please enter your password.';
     return null;
   }
@@ -175,16 +183,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      if (response.body.contains("Incorrect phone number or password")) {
-        throw Exception('Неверный номер телефона или пароль');
-      }
       return true;
+    } else if (response.statusCode == 401) {
+      throw Exception('Неверный номер телефона или пароль');
     } else {
-      throw Exception('Ошибка входа: ${response.body}');
+      throw Exception('Ошибка сервера: ${response.statusCode}');
     }
   }
 
-  // Логин пользователя
+
   Future<void> handleLogin() async {
     final error = validateLoginForm();
     if (error != null) {
@@ -197,14 +204,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         loginPhoneController.text,
         loginPasswordController.text,
       );
+
       if (success) {
         print("Login successful");
+
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getInt('userId');
+
+        if (userId != null) {
+          print("User ID: $userId");
+        }
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => MenuScreen(
               languageCode: widget.languageCode,
-              name: 'Logged in user', // Передать имя пользователя, если доступно
+              name: 'Logged in user',
               surname: '',
             ),
           ),
@@ -215,79 +231,97 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
-  // Создание формы логина или регистрации
+
   Widget buildForm(double screenWidth, double screenHeight) {
     return Container(
       width: screenWidth * 0.65,
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-          // Поля для регистрации
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
           if (isRegistrationSelected) ...[
-      TextField(
-      controller: nameController,
-      decoration: buildInputDecoration(getText('name')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: surnameController,
-    decoration: buildInputDecoration(getText('surname')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: registerPhoneController,
-    decoration: buildInputDecoration(getText('phone')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: registerPasswordController,
-    obscureText: true,
-    decoration: buildInputDecoration(getText('password')),
-    ),
-    SizedBox(height: screenHeight * 0.03),
-    TextField(
-    controller: confirmPasswordController,
-    obscureText: true,
-    decoration: buildInputDecoration(getText('repeatPassword')),
-    ),
-    ],
+            TextField(
+              controller: nameController,
+              decoration: buildInputDecoration(getText('name')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: surnameController,
+              decoration: buildInputDecoration(getText('surname')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: registerPhoneController,
+              decoration: buildInputDecoration(getText('phone')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: registerPasswordController,
+              obscureText: true,
+              decoration: buildInputDecoration(getText('password')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: buildInputDecoration(getText('repeatPassword')),
+            ),
+          ],
 
-
-            // Поля для логина
-            if (!isRegistrationSelected) ...[
-              TextField(
-                controller: loginPhoneController,
-                decoration: buildInputDecoration(getText('phone')),
-              ),
-              SizedBox(height: screenHeight * 0.03),
-              TextField(
-                controller: loginPasswordController,
-                obscureText: true,
-                decoration: buildInputDecoration(getText('password')),
-              ),
-            ],
-
-            SizedBox(height: screenHeight * 0.05),
-
-            // Кнопка для логина/регистрации
-            ElevatedButton(
-              onPressed: isRegistrationSelected ? handleRegistration : handleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFBB6700),
-                minimumSize: Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                isRegistrationSelected ? getText('register') : getText('login'),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: screenWidth * 0.05,
+          if (!isRegistrationSelected) ...[
+            TextField(
+              controller: loginPhoneController,
+              decoration: buildInputDecoration(getText('phone')),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            TextField(
+              controller: loginPasswordController,
+              obscureText: true,
+              decoration: buildInputDecoration(getText('password')),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          PasswordRecoveryScreen(languageCode: widget.languageCode),
+                    ),
+                  );
+                },
+                child: Text(
+                  getText('forgotPassword'),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: screenWidth * 0.04,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white,
+                  ),
                 ),
               ),
             ),
           ],
+
+          SizedBox(height: screenHeight * 0.05),
+          ElevatedButton(
+            onPressed: isRegistrationSelected ? handleRegistration : handleLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFBB6700),
+              minimumSize: Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              isRegistrationSelected ? getText('register') : getText('login'),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: screenWidth * 0.05,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -315,7 +349,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
       body: Stack(
         children: [
-          // Фон
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -324,7 +357,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
             ),
           ),
-          // Форма
           Container(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
             child: Column(
