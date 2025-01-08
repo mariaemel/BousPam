@@ -150,7 +150,7 @@ class _MenuScreenState extends State<MenuScreen>  {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ProfileScreen(languageCode: widget.languageCode),
+                                    ProfileScreen(languageCode: widget.languageCode, userId: _userId),
                               ),
                             );
                           },

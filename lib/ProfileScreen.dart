@@ -2,19 +2,22 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-Future<Map<String, String>> fetchUserData(String token) async {
-  final url = Uri.parse('http://server.bouspam.yusim.space/user/profile');
+Future<Map<String, String>> fetchUserData(String userId) async {
+  final url = Uri.parse('http://server.bouspam.yusim.space/user/profile/$userId');
 
-  final response = await http.get(url, headers: {
-    'Authorization': 'Bearer $token',
-  });
+  final response = await http.get(url);
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     return {
       'name': data['name'] ?? 'Unknown',
       'surname': data['surname'] ?? 'Unknown',
-      'phone': data['phone'] ?? 'Unknown',
+      'phone_number': data['phone_number'] ?? 'Unknown',
+      'email': data['email'] ?? 'Unknown',
+      'passportNumber': data['passportNumber'] ?? 'Unknown',
+      'niu': data['niu'] ?? 'Unknown',
+      'nif': data['nif'] ?? 'Unknown',
+      'password': data['password'] ?? 'Unknown',
     };
   } else {
     throw Exception('Failed to load user data');
@@ -24,8 +27,9 @@ Future<Map<String, String>> fetchUserData(String token) async {
 
 class ProfileScreen extends StatefulWidget {
   final String languageCode;
+  final int userId;
 
-  ProfileScreen({required this.languageCode});
+  ProfileScreen({required this.languageCode, required this.userId});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -33,15 +37,37 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String get languageCode => widget.languageCode;
+  int get userId => widget.userId;
 
   Map<String, String> userInfo = {
-    'phoneNumber': '+ XXX XXX XX XX',
-    'email': 'Add',
-    'passportNumber': 'Add',
-    'niu': 'Add',
-    'nif': 'Add',
-    'password': '********',
+    'phone_number': 'Loading...',
+    'name': 'Loading...',
+    'surname': 'Loading...',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() async {
+    try {
+      final data = await fetchUserData(userId.toString());
+      setState(() {
+        userInfo = data;
+      });
+    } catch (e) {
+      setState(() {
+        userInfo = {
+          'phone_number': 'Error',
+          'name': 'Error',
+          'surname': 'Error',
+        };
+      });
+    }
+  }
+
 
   String getText(String key) {
     switch (languageCode) {
@@ -118,6 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }[key]!;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -151,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(width: screenWidth * 0.03),
                   Text(
-                    getText('nameSurname'),
+                    '${userInfo['name']} ${userInfo['surname']}',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: screenWidth * 0.05,
@@ -168,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('phoneNumber'),
-                    userInfo['phoneNumber']!,
+                    userInfo['phone_number']!,
                   ),
                   _buildProfileField(
                     context,
@@ -217,6 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
   Widget _buildProfileField(
       BuildContext context,
       String title,
@@ -447,7 +475,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: () {
                   Navigator.pop(context);
-                  // Add logic to save the new password here.
+
                 },
                 child: const Text('Save'),
               ),
