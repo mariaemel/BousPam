@@ -49,6 +49,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           'passwordTooShort': 'Le mot de passe doit comporter au moins 6 caractères',
           'passwordsDoNotMatch': 'Les mots de passe ne correspondent pas',
         }[key]!;
+      case 'es':
+        return {
+          'newPassword': 'Nueva contraseña',
+          'repeatPassword': 'Repita la nueva contraseña',
+          'save': 'Guardar',
+          'instruction': 'Su nueva contraseña debe ser diferente de la anterior',
+          'passwordRequired': 'Se requiere contraseña',
+          'passwordTooShort': 'La contraseña debe tener al menos 6 caracteres',
+          'passwordsDoNotMatch': 'Las contraseñas no coinciden',
+        }[key]!;
+      case 'ht':
+        return {
+          'newPassword': 'Nouvo modpas',
+          'repeatPassword': 'Repete nouvo modpas la',
+          'save': 'Sove',
+          'instruction': 'Nouvo modpas ou dwe diferan de modpas anvan an',
+          'passwordRequired': 'Modpas obligatwa',
+          'passwordTooShort': 'Modpas la dwe gen omwen 6 karaktè',
+          'passwordsDoNotMatch': 'Modpas yo pa matche',
+        }[key]!;
       case 'en':
       default:
         return {
@@ -62,6 +82,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         }[key]!;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
