@@ -159,8 +159,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         MaterialPageRoute(
           builder: (context) => MenuScreen(
             languageCode: widget.languageCode,
-            name: nameController.text,
-            surname: surnameController.text,
+            userId: userId,
           ),
         ),
       );
@@ -228,8 +227,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           MaterialPageRoute(
             builder: (context) => MenuScreen(
               languageCode: widget.languageCode,
-              name: userData['name'] ?? 'User',
-              surname: userData['surname'] ?? '',
+              userId: userId!,
             ),
           ),
         );

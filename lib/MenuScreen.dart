@@ -1,53 +1,81 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'MainScreen.dart';
 import 'ProfileScreen.dart';
 
-Future<int> getUserId() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getInt('id') ?? 0;
+
+class MenuScreen extends StatefulWidget {
+  final String languageCode;
+  final int userId;
+
+  MenuScreen({required this.languageCode, required this.userId});
+
+  @override
+  _MenuScreenState createState() => _MenuScreenState();
 }
 
-class MenuScreen extends StatelessWidget {
-  final String languageCode;
-  final String? name;
-  final String? surname;
+class _MenuScreenState extends State<MenuScreen>  {
+  late int _userId;
+  String _userName = '';
+  String _userSurname = '';
 
-  MenuScreen({
-    required this.languageCode,
-    this.name,
-    this.surname,
-  });
+  @override
+  void initState() {
+    super.initState();
+    _userId = widget.userId;
+    _fetchUserDetails();
+  }
+
+  Future<void> _fetchUserDetails() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://server.bouspam.yusim.space/user/$_userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _userName = data['name'] ?? 'Unknown';
+          _userSurname = data['surname'] ?? 'Unknown';
+        });
+      } else {
+        throw Exception('Error fetching user details');
+      }
+    } catch (e) {
+      setState(() {
+        _userName = 'Unknown';
+        _userSurname = 'Unknown';
+      });
+      print('Error: $e');
+    }
+  }
 
   String getText(String key) {
-    switch (languageCode) {
+    switch (widget.languageCode) {
       case 'pt':
         return {
           'profile': 'Perfil',
           'savings': 'Poupança',
           'contribution': 'Contribuição',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'fr':
         return {
           'profile': 'Profil',
           'savings': 'Épargne',
           'contribution': 'Contribution',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'ht':
         return {
           'profile': 'Pwofil',
           'savings': 'Kach',
           'contribution': 'Kondwit',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'es':
         return {
           'profile': 'Perfil',
           'savings': 'Ahorros',
           'contribution': 'Contribución',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'en':
       default:
@@ -55,7 +83,6 @@ class MenuScreen extends StatelessWidget {
           'profile': 'Profile',
           'savings': 'Savings',
           'contribution': 'Contribution',
-          'nameSurname': '$name $surname',
         }[key]!;
     }
   }
@@ -65,143 +92,128 @@ class MenuScreen extends StatelessWidget {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
-    return FutureBuilder<int>(
-      future: getUserId(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error loading user ID'));
-        } else if (!snapshot.hasData || snapshot.data == 0) {
-          return Center(child: Text('User ID not found'));
-        }
-
-        int userId = snapshot.data!;
-
-        return Scaffold(
-          body: Stack(
-            children: [
-              Container(
-                width: double.infinity,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/menuscreen.png'),
-                    fit: BoxFit.cover,
+    return Scaffold(
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/menuscreen.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+            child: Column(
+              children: [
+                SizedBox(height: screenHeight * 0.05),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.04,
+                    vertical: screenHeight * 0.02,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Color.fromRGBO(48, 38, 47, 0.56),
+                    borderRadius: BorderRadius.circular(screenWidth * 0.05),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: screenWidth * 0.09,
+                        backgroundColor: Colors.grey,
+                      ),
+                      SizedBox(width: screenWidth * 0.05),
+                      Text(
+                        '$_userName $_userSurname',
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.05,
+                          color: Colors.white,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-                child: Column(
+                SizedBox(height: screenHeight * 0.08),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    SizedBox(height: screenHeight * 0.05),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.04,
-                        vertical: screenHeight * 0.02,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(48, 38, 47, 0.56),
-                        borderRadius: BorderRadius.circular(screenWidth * 0.05),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: screenWidth * 0.09,
-                            backgroundColor: Colors.grey,
+                    _buildAdaptiveButton(
+                      context,
+                      text: getText('profile'),
+                      isSelected: true,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProfileScreen(languageCode: widget.languageCode),
                           ),
-                          SizedBox(width: screenWidth * 0.05),
-                          Text(
-                            '$name $surname',
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.05,
-                              color: Colors.white,
-                              fontWeight: FontWeight.normal,
-                            ),
+                        );
+                      },
+                    ),
+                    _buildAdaptiveButton(
+                      context,
+                      text: getText('savings'),
+                      isSelected: false,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MainScreen(languageCode: widget.languageCode, userId: _userId),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                    SizedBox(height: screenHeight * 0.08),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildAdaptiveButton(
-                          context,
-                          text: getText('profile'),
-                          isSelected: true,
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ProfileScreen(languageCode: languageCode),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildAdaptiveButton(
-                          context,
-                          text: getText('savings'),
-                          isSelected: false,
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    MainScreen(languageCode: languageCode, userId: userId),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildAdaptiveButton(
-                          context,
-                          text: getText('contribution'),
-                          isSelected: false,
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.08),
-                    Container(
-                      width: screenWidth,
-                      height: 5.0,
-                      color: Color.fromARGB(255, 139, 136, 143),
-                    ),
-                    SizedBox(height: screenHeight * 0.07),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: 3,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: screenHeight * 0.07),
-                            child: Container(
-                              height: screenHeight * 0.12,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius:
-                                BorderRadius.circular(screenWidth * 0.03),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                    _buildAdaptiveButton(
+                      context,
+                      text: getText('contribution'),
+                      isSelected: false,
+                      onPressed: () {},
                     ),
                   ],
                 ),
-              ),
-            ],
+                SizedBox(height: screenHeight * 0.08),
+                Container(
+                  width: screenWidth,
+                  height: 5.0,
+                  color: Color.fromARGB(255, 139, 136, 143),
+                ),
+                SizedBox(height: screenHeight * 0.07),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: 3,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: screenHeight * 0.07),
+                        child: Container(
+                          height: screenHeight * 0.12,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                            BorderRadius.circular(screenWidth * 0.03),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
