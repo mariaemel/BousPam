@@ -150,7 +150,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       }
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('userId', userId);
+      await prefs.setInt('id', userId);
 
       print("Registration successful: $result");
       print(userId);
@@ -169,8 +169,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
-
-
   String? validateLoginForm() {
     if (loginPhoneController.text.isEmpty) return 'Please enter your phone number.';
     if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(loginPhoneController.text)) return 'Invalid phone number format.';
@@ -178,19 +176,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return null;
   }
 
-  Future<bool> loginUser(String phone, String password) async {
+  Future<Map<String, dynamic>> loginUser(String phone, String password) async {
     final url = Uri.parse('http://server.bouspam.yusim.space/login/?phone_number=$phone&password=$password');
     final response = await http.get(url);
 
+    print("Response body: ${response.body}");
+
     if (response.statusCode == 200) {
-      return true;
+      try {
+        final Map<String, dynamic> userData = jsonDecode(response.body);
+        print("Parsed user data: $userData");
+
+        if (userData.containsKey('id')) {
+          return userData;
+        } else {
+          throw Exception('User ID not found in the response');
+        }
+      } catch (e) {
+        throw Exception('Error parsing response: $e');
+      }
     } else if (response.statusCode == 401) {
-      throw Exception('Неверный номер телефона или пароль');
+      throw Exception('Invalid phone number or password');
     } else {
-      throw Exception('Ошибка сервера: ${response.statusCode}');
+      throw Exception('Server error: ${response.statusCode}');
     }
   }
-
 
   Future<void> handleLogin() async {
     final error = validateLoginForm();
@@ -200,28 +210,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
 
     try {
-      final success = await loginUser(
+      final userData = await loginUser(
         loginPhoneController.text,
         loginPasswordController.text,
       );
 
-      if (success) {
-        print("Login successful");
+      final userId = userData['id'];
 
+      if (userId != null) {
         final prefs = await SharedPreferences.getInstance();
-        final userId = prefs.getInt('userId');
+        await prefs.setInt('id', userId);
 
-        if (userId != null) {
-          print("User ID: $userId");
-        }
+        print("Login successful. User ID: $userId");
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => MenuScreen(
               languageCode: widget.languageCode,
-              name: 'Logged in user',
-              surname: '',
+              name: userData['name'] ?? 'User',
+              surname: userData['surname'] ?? '',
             ),
           ),
         );
@@ -230,7 +238,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
-
 
   Widget buildForm(double screenWidth, double screenHeight) {
     return Container(

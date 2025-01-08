@@ -5,7 +5,7 @@ import 'ProfileScreen.dart';
 
 Future<int> getUserId() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getInt('userId') ?? 0;
+  return prefs.getInt('id') ?? 0;
 }
 
 class MenuScreen extends StatelessWidget {
