@@ -1,7 +1,6 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'MenuScreen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -12,6 +11,7 @@ class ResetPasswordScreen extends StatefulWidget {
   @override
   _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
 }
+
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _repeatPasswordController = TextEditingController();
@@ -19,6 +19,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   FocusNode _newPasswordFocusNode = FocusNode();
   FocusNode _repeatPasswordFocusNode = FocusNode();
+
+  int? userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getInt('userId');
+    });
+  }
 
   @override
   void dispose() {
@@ -180,7 +195,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MenuScreen(languageCode: widget.languageCode),
+                            builder: (context) => MenuScreen(
+                              languageCode: widget.languageCode,
+                              userId: userId!,
+                            ),
                           ),
                         );
                       }
