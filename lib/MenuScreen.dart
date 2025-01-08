@@ -1,53 +1,81 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'MainScreen.dart';
 import 'ProfileScreen.dart';
 
-Future<int> getUserId() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getInt('userId') ?? 0;
+
+class MenuScreen extends StatefulWidget {
+  final String languageCode;
+  final int userId;
+
+  MenuScreen({required this.languageCode, required this.userId});
+
+  @override
+  _MenuScreenState createState() => _MenuScreenState();
 }
 
-class MenuScreen extends StatelessWidget {
-  final String languageCode;
-  final String? name;
-  final String? surname;
+class _MenuScreenState extends State<MenuScreen>  {
+  late int _userId;
+  String _userName = '';
+  String _userSurname = '';
 
-  MenuScreen({
-    required this.languageCode,
-    this.name,
-    this.surname,
-  });
+  @override
+  void initState() {
+    super.initState();
+    _userId = widget.userId;
+    _fetchUserDetails();
+  }
+
+  Future<void> _fetchUserDetails() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://server.bouspam.yusim.space/user/$_userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _userName = data['name'] ?? 'Unknown';
+          _userSurname = data['surname'] ?? 'Unknown';
+        });
+      } else {
+        throw Exception('Error fetching user details');
+      }
+    } catch (e) {
+      setState(() {
+        _userName = 'Unknown';
+        _userSurname = 'Unknown';
+      });
+      print('Error: $e');
+    }
+  }
 
   String getText(String key) {
-    switch (languageCode) {
+    switch (widget.languageCode) {
       case 'pt':
         return {
           'profile': 'Perfil',
           'savings': 'Poupança',
           'contribution': 'Contribuição',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'fr':
         return {
           'profile': 'Profil',
           'savings': 'Épargne',
           'contribution': 'Contribution',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'ht':
         return {
           'profile': 'Pwofil',
           'savings': 'Kach',
           'contribution': 'Kondwit',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'es':
         return {
           'profile': 'Perfil',
           'savings': 'Ahorros',
           'contribution': 'Contribución',
-          'nameSurname': '$name $surname',
         }[key]!;
       case 'en':
       default:
@@ -55,7 +83,6 @@ class MenuScreen extends StatelessWidget {
           'profile': 'Profile',
           'savings': 'Savings',
           'contribution': 'Contribution',
-          'nameSurname': '$name $surname',
         }[key]!;
     }
   }
@@ -64,19 +91,6 @@ class MenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
-    return FutureBuilder<int>(
-      future: getUserId(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error loading user ID'));
-        } else if (!snapshot.hasData || snapshot.data == 0) {
-          return Center(child: Text('User ID not found'));
-        }
-
-        int userId = snapshot.data!;
 
         return Scaffold(
           body: Stack(
@@ -113,7 +127,7 @@ class MenuScreen extends StatelessWidget {
                           ),
                           SizedBox(width: screenWidth * 0.05),
                           Text(
-                            '$name $surname',
+                            '$_userName $_userSurname',
                             style: TextStyle(
                               fontSize: screenWidth * 0.05,
                               color: Colors.white,
@@ -136,7 +150,7 @@ class MenuScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ProfileScreen(languageCode: languageCode),
+                                    ProfileScreen(languageCode: widget.languageCode),
                               ),
                             );
                           },
@@ -150,7 +164,7 @@ class MenuScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    MainScreen(languageCode: languageCode, userId: userId),
+                                    MainScreen(languageCode: widget.languageCode, userId: _userId),
                               ),
                             );
                           },
@@ -201,8 +215,6 @@ class MenuScreen extends StatelessWidget {
             ],
           ),
         );
-      },
-    );
   }
 
 

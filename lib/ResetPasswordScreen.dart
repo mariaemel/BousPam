@@ -1,7 +1,6 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'MenuScreen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -12,6 +11,7 @@ class ResetPasswordScreen extends StatefulWidget {
   @override
   _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
 }
+
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _repeatPasswordController = TextEditingController();
@@ -19,6 +19,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   FocusNode _newPasswordFocusNode = FocusNode();
   FocusNode _repeatPasswordFocusNode = FocusNode();
+
+  int? userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getInt('userId');
+    });
+  }
 
   @override
   void dispose() {
@@ -48,6 +63,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           'passwordRequired': 'Mot de passe requis',
           'passwordTooShort': 'Le mot de passe doit comporter au moins 6 caractères',
           'passwordsDoNotMatch': 'Les mots de passe ne correspondent pas',
+        }[key]!;
+      case 'es':
+        return {
+          'newPassword': 'Nueva contraseña',
+          'repeatPassword': 'Repita la nueva contraseña',
+          'save': 'Guardar',
+          'instruction': 'Su nueva contraseña debe ser diferente de la anterior',
+          'passwordRequired': 'Se requiere contraseña',
+          'passwordTooShort': 'La contraseña debe tener al menos 6 caracteres',
+          'passwordsDoNotMatch': 'Las contraseñas no coinciden',
+        }[key]!;
+      case 'ht':
+        return {
+          'newPassword': 'Nouvo modpas',
+          'repeatPassword': 'Repete nouvo modpas la',
+          'save': 'Sove',
+          'instruction': 'Nouvo modpas ou dwe diferan de modpas anvan an',
+          'passwordRequired': 'Modpas obligatwa',
+          'passwordTooShort': 'Modpas la dwe gen omwen 6 karaktè',
+          'passwordsDoNotMatch': 'Modpas yo pa matche',
         }[key]!;
       case 'en':
       default:
@@ -159,7 +194,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MenuScreen(languageCode: widget.languageCode),
+                            builder: (context) => MenuScreen(
+                              languageCode: widget.languageCode,
+                              userId: userId!,
+                            ),
                           ),
                         );
                       }
