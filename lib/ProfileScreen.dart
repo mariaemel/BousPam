@@ -26,12 +26,12 @@ Map<String, String> parseUserData(String responseBody) {
   return {
     'name': data['name'] ?? 'No name',
     'surname': data['surname'] ?? 'No surname',
-    'phoneNumber': data['phone_number'] ?? 'No phone number',
+    'phoneNumber': data['phone_number'] ?? 'N/A',
     'password': '********',
-    'email': data['e_mail'] ?? 'No email',
-    'passportNumber': data['passport_number'] ?? 'No passport',
-    'niu': data['inn'] ?? 'No NIU',
-    'nif': data['snils'] ?? 'No NIF',
+    'email': data['e_mail'] ?? 'N/A',
+    'passportNumber': data['passport_number'] ?? 'N/A',
+    'niu': data['inn'] ?? 'N/A',
+    'nif': data['snils'] ?? 'N/A',
   };
 }
 
@@ -65,6 +65,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('id');
     final url = 'http://server.bouspam.yusim.space/user/$userId';
     try {
       final response = await http.get(Uri.parse(url));
@@ -105,6 +107,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _addUserData(String key, String value, int userId) async {
+    final url = Uri.parse('http://server.bouspam.yusim.space/user/$userId'); // Замените userId на реальный ID пользователя
+    final body = jsonEncode({
+      key: value, // Поле, которое вы хотите обновить, например "email" или "passportNumber"
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Data added successfully!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Data added successfully')),
+        );
+      } else {
+        print('Failed to add data: ${response.statusCode}, ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add data: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error occurred while adding data')),
+      );
+    }
+  }
 
   String getText(String key) {
     switch (languageCode) {
@@ -197,7 +230,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             SizedBox(height: screenHeight * 0.02),
-            // Показ ошибки, если она есть
             if (errorMessage.isNotEmpty)
               Text(
                 errorMessage,
@@ -243,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('email'),
-                    '${userInfo['email']}',
+                    userInfo['email'] ?? 'N/A',
                     onTap: () {
                       _showDialog(context, getText('email'), 'email');
                     },
@@ -251,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('passportNumber'),
-                    '${userInfo['passportNumber']}',
+                    userInfo['passportNumber'] ?? 'N/A',
                     onTap: () {
                       _showDialog(context, getText('passportNumber'), 'passportNumber');
                     },
@@ -275,20 +307,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('password'),
-                    userInfo['password'] ?? 'N/A',
+                    userInfo['password'] ?? '*********',
                     showChangeButton: true,
                     onTap: () {},
                   ),
                 ],
               ),
             ),
-
           ],
         ),
       ),
     );
   }
-
 
   Widget _buildProfileField(
       BuildContext context,
@@ -337,10 +367,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   GestureDetector(
                     onTap: onTap,
                     child: Text(
-                      value,
+                      value == "N/A" ? "Add" : value,
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
-                        color: value == "Add"
+                        color: value == "N/A"
                             ? const Color.fromARGB(255, 187, 103, 0)
                             : Colors.black,
                         fontWeight: FontWeight.w400,
@@ -371,8 +401,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showDialog(BuildContext context, String inputType, String key) {
+    // Создаем контроллер для ввода текста
     TextEditingController controller = TextEditingController();
 
+    // Показываем диалог
     showDialog(
       context: context,
       builder: (context) {
@@ -392,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: controller,
+                controller: controller, // Привязываем контроллер
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   labelText: getText('enterInfo'),
@@ -419,11 +451,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                 ),
-                onPressed: () {
-                  setState(() {
-                    userInfo[key] = controller.text;
-                  });
-                  Navigator.pop(context);
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  final userId = prefs.getInt('id'); // Получаем ID пользователя из SharedPreferences
+
+                  if (userId != null) {
+                    // Отправляем данные на сервер через _addUserData
+                    await _addUserData(key, controller.text, userId);
+
+                    // Обновляем локальное состояние
+                    setState(() {
+                      userInfo[key] = controller.text; // Сохраняем данные в userInfo
+                    });
+
+                    // Закрываем диалог
+                    Navigator.pop(context);
+                  } else {
+                    print('User ID not found');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('User ID not found')),
+                    );
+                  }
                 },
                 child: Text(
                   getText('continue'),
@@ -436,6 +484,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
+
 
   void _showChangePasswordDialog(BuildContext context) {
     showDialog(
