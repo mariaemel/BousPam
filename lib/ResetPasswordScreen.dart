@@ -31,7 +31,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Future<void> _loadUserId() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      userId = prefs.getInt('userId');
+      userId = prefs.getInt('id');
     });
   }
 

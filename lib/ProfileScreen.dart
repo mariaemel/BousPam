@@ -1,35 +1,45 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-Future<Map<String, String>> fetchUserData(String userId) async {
-  final url = Uri.parse('http://server.bouspam.yusim.space/user/profile/$userId');
-
-  final response = await http.get(url);
+Future<Map<String, String>> fetchUserData(int userId) async {
+  final url = Uri.parse('http://server.bouspam.yusim.space/user/$userId');
+  final response = await http.get(url, headers: {'accept': 'application/json'});
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     return {
       'name': data['name'] ?? 'Unknown',
       'surname': data['surname'] ?? 'Unknown',
-      'phone_number': data['phone_number'] ?? 'Unknown',
-      'email': data['email'] ?? 'Unknown',
-      'passportNumber': data['passportNumber'] ?? 'Unknown',
-      'niu': data['niu'] ?? 'Unknown',
-      'nif': data['nif'] ?? 'Unknown',
-      'password': data['password'] ?? 'Unknown',
+      'phone': data['phone_number'] ?? 'Unknown',
     };
   } else {
-    throw Exception('Failed to load user data');
+    throw Exception('Failed to load user data: ${response.body}');
   }
+}
+
+Map<String, String> parseUserData(String responseBody) {
+  final Map<String, dynamic> data = json.decode(responseBody);
+  print('Parsed data: $data');
+
+  return {
+    'name': data['name'] ?? 'No name',
+    'surname': data['surname'] ?? 'No surname',
+    'phoneNumber': data['phone_number'] ?? 'N/A',
+    'password': '********',
+    'e_mail': data['e_mail'] ?? 'N/A',
+    'passportNumber': data['passport_number'] ?? 'N/A',
+    'niu': data['snils'] ?? 'N/A',
+    'nif': data['inn'] ?? 'N/A',
+  };
 }
 
 
 class ProfileScreen extends StatefulWidget {
   final String languageCode;
-  final int userId;
 
-  ProfileScreen({required this.languageCode, required this.userId});
+  ProfileScreen({required this.languageCode});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -37,37 +47,122 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String get languageCode => widget.languageCode;
-  int get userId => widget.userId;
+  bool isLoading = true;
+  String errorMessage = '';
+  String userId = '';
 
   Map<String, String> userInfo = {
-    'phone_number': 'Loading...',
     'name': 'Loading...',
     'surname': 'Loading...',
+    'phone_name': 'Loading...',
   };
 
   @override
   void initState() {
     super.initState();
+    _loadUserProfile();
     _loadUserData();
   }
 
-  void _loadUserData() async {
+  Future<void> _updateUserData(String key, String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('id');
+    if (userId == null) {
+      print('User ID not found');
+      return;
+    }
+
+    final url = Uri.parse('http://server.bouspam.yusim.space/user/$userId');
+
+    final requestBody = {
+      'name': userInfo['name'] ?? '',
+      'surname': userInfo['surname'] ?? '',
+      'password': userInfo['password'] ?? '',
+      'phone_number': userInfo['phoneNumber'],
+      'e_mail': userInfo['e_mail'] ?? '',
+      'passport_number': userInfo['passportNumber'] ?? '',
+      'snils': userInfo['niu'] ?? '',
+      'inn': userInfo['nif'] ?? '',
+    };
+
+    requestBody[key] = value;
+
     try {
-      final data = await fetchUserData(userId.toString());
-      setState(() {
-        userInfo = data;
-      });
+      final response = await http.put(
+        url,
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Data updated successfully');
+        setState(() {
+          userInfo[key] = value;
+        });
+      } else {
+        print('Failed to update data: ${response.statusCode}, ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update data')));
+      }
     } catch (e) {
-      setState(() {
-        userInfo = {
-          'phone_number': 'Error',
-          'name': 'Error',
-          'surname': 'Error',
-        };
-      });
+      print('Error sending data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error sending data')));
     }
   }
 
+
+
+
+  void _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('id');
+    if (userId == null) {
+      print('User ID not found');
+      return;
+    }
+
+    final url = Uri.parse('http://server.bouspam.yusim.space/user/$userId');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          userInfo = parseUserData(response.body);
+        });
+      } else {
+        print('Failed to load user data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+
+  Future<void> _loadUserProfile() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('id');
+
+    if (userId != null) {
+      try {
+        final userData = await fetchUserData(userId);
+        setState(() {
+          userInfo = userData;
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load user data')));
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User ID not found')));
+    }
+  }
 
   String getText(String key) {
     switch (languageCode) {
@@ -75,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return {
           'profile': 'Perfil',
           'phoneNumber': 'Número de telefone',
-          'email': 'E-mail',
+          'e_mail': 'E-mail',
           'passportNumber': 'Número do passaporte',
           'niu': 'NIU',
           'nif': 'NIF',
@@ -89,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return {
           'profile': 'Profil',
           'phoneNumber': 'Numéro de téléphone',
-          'email': 'E-mail',
+          'e_mail': 'E-mail',
           'passportNumber': 'Numéro de passeport',
           'niu': 'NIU',
           'nif': 'NIF',
@@ -103,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return {
           'profile': 'Pwofil',
           'phoneNumber': 'Nimewo telefòn',
-          'email': 'Imèl',
+          'e_mail': 'Imèl',
           'passportNumber': 'Nimewo paspò',
           'niu': 'NIU',
           'nif': 'NIF',
@@ -117,7 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return {
           'profile': 'Perfil',
           'phoneNumber': 'Número de Teléfono',
-          'email': 'E-mail',
+          'e_mail': 'E-mail',
           'passportNumber': 'Número de Pasaporte',
           'niu': 'NIU',
           'nif': 'NIF',
@@ -132,7 +227,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return {
           'profile': 'Profile',
           'phoneNumber': 'Phone Number',
-          'email': 'E-mail',
+          'e_mail': 'E-mail',
           'passportNumber': 'Passport Number',
           'niu': 'NIU',
           'nif': 'NIF',
@@ -160,6 +255,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
         child: Column(
           children: [
+            SizedBox(height: screenHeight * 0.02),
+            if (errorMessage.isNotEmpty)
+              Text(
+                errorMessage,
+                style: TextStyle(color: Colors.red, fontSize: screenWidth * 0.05),
+              ),
             SizedBox(height: screenHeight * 0.02),
             Container(
               padding: EdgeInsets.symmetric(
@@ -195,20 +296,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('phoneNumber'),
-                    userInfo['phone_number']!,
+                    '${userInfo['phoneNumber']}',
                   ),
                   _buildProfileField(
                     context,
-                    getText('email'),
-                    userInfo['email']!,
+                    getText('e_mail'),
+                    userInfo['e_mail'] ?? 'N/A',
                     onTap: () {
-                      _showDialog(context, getText('email'), 'email');
+                      _showDialog(context, getText('e_mail'), 'e_mail');
                     },
                   ),
                   _buildProfileField(
                     context,
                     getText('passportNumber'),
-                    userInfo['passportNumber']!,
+                    userInfo['passportNumber'] ?? 'N/A',
                     onTap: () {
                       _showDialog(context, getText('passportNumber'), 'passportNumber');
                     },
@@ -216,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('niu'),
-                    userInfo['niu']!,
+                    userInfo['niu'] ?? 'N/A',
                     onTap: () {
                       _showDialog(context, getText('niu'), 'niu');
                     },
@@ -224,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('nif'),
-                    userInfo['nif']!,
+                    userInfo['nif'] ?? 'N/A',
                     onTap: () {
                       _showDialog(context, getText('nif'), 'nif');
                     },
@@ -232,7 +333,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileField(
                     context,
                     getText('password'),
-                    userInfo['password']!,
+                    userInfo['password'] ?? '*********',
                     showChangeButton: true,
                     onTap: () {},
                   ),
@@ -244,6 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
 
   Widget _buildProfileField(
       BuildContext context,
@@ -290,12 +392,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: screenHeight * 0.01),
                   GestureDetector(
-                    onTap: onTap,
+                    onTap: (title != getText('phoneNumber')) ? onTap : null,
                     child: Text(
-                      value,
+                      value == "N/A" ? "Add" : value,
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
-                        color: value == "Add"
+                        color: value == "N/A"
                             ? const Color.fromARGB(255, 187, 103, 0)
                             : Colors.black,
                         fontWeight: FontWeight.w400,
@@ -325,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showDialog(BuildContext context, String inputType, String key) {
+  void _showDialog(BuildContext context, String inputType, String key) async {
     TextEditingController controller = TextEditingController();
 
     showDialog(
@@ -350,7 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 controller: controller,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  labelText: getText('enterInfo'),
+                  labelText: 'Enter Info',
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
@@ -372,17 +474,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 20,
+                  ),
                 ),
-                onPressed: () {
-                  setState(() {
-                    userInfo[key] = controller.text;
-                  });
-                  Navigator.pop(context);
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  final userId = prefs.getInt('id');
+
+                  if (userId != null) {
+                    final value = controller.text;
+
+                    if (value.isNotEmpty) {
+                      await _updateUserData(key, value);
+
+                      setState(() {
+                        userInfo[key] = value;
+                      });
+
+                      Navigator.pop(context);
+                    } else {
+                      print('Input is empty');
+                    }
+                  } else {
+                    print('User ID not found');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User ID not found')),
+                    );
+                  }
                 },
-                child: Text(
-                  getText('continue'),
-                  style: const TextStyle(fontSize: 14),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(fontSize: 14),
                 ),
               ),
             ],
@@ -391,6 +515,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
+
+
 
   void _showChangePasswordDialog(BuildContext context) {
     showDialog(
@@ -475,7 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: () {
                   Navigator.pop(context);
-
+                  // Add logic to save the new password here.
                 },
                 child: const Text('Save'),
               ),
