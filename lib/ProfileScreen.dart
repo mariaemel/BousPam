@@ -179,6 +179,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Adicionar Informação',
           'enterInfo': 'Insira sua informação',
           'continue': 'Continuar',
+          'oldPassword': 'Senha antiga',
+          'newPassword': 'Nova senha',
+          'repeatNewPassword': 'Repita a nova senha',
+          'save': 'Salvar',
+          'change': 'Mudar',
+          'add': 'Adicionar',
         }[key]!;
       case 'fr':
         return {
@@ -193,6 +199,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Ajouter des informations',
           'enterInfo': 'Entrez votre information',
           'continue': 'Continuer',
+          'oldPassword': 'Ancien mot de passe',
+          'newPassword': 'Nouveau mot de passe',
+          'repeatNewPassword': 'Répéter le nouveau mot de passe',
+          'save': 'Sauvegarder',
+          'change': 'Changer',
+          'add': 'Ajouter',
         }[key]!;
       case 'ht':
         return {
@@ -207,6 +219,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Ajoute enfòmasyon',
           'enterInfo': 'Antre enfòmasyon ou',
           'continue': 'Kontinye',
+          'oldPassword': 'Vye modpas',
+          'newPassword': 'Nouvo modpas',
+          'repeatNewPassword': 'Repete nouvo modpas',
+          'save': 'Sove',
+          'change': 'Chanje',
+          'add': 'Ajoute',
         }[key]!;
       case 'es':
         return {
@@ -221,6 +239,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'addInfo': 'Agregar información',
           'enterInfo': 'Ingrese su información',
           'continue': 'Continuar',
+          'oldPassword': 'Contraseña antigua',
+          'newPassword': 'Nueva contraseña',
+          'repeatNewPassword': 'Repita la nueva contraseña',
+          'save': 'Guardar',
+          'change': 'Cambiar',
+          'add': 'Agregar',
         }[key]!;
       case 'en':
       default:
@@ -234,8 +258,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'password': 'Password',
           'nameSurname': 'Name Surname',
           'addInfo': 'Add Information',
-          'enterInfo': 'Enter your information',
+          'enterInfo': 'Enter info',
           'continue': 'Continue',
+          'oldPassword': 'Old password',
+          'newPassword': 'New password',
+          'repeatNewPassword': 'Repeat new password',
+          'save': 'Save',
+          'change': 'Change',
+          'add': 'Add',
         }[key]!;
     }
   }
@@ -394,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   GestureDetector(
                     onTap: (title != getText('phoneNumber')) ? onTap : null,
                     child: Text(
-                      value == "N/A" ? "Add" : value,
+                      value == "N/A" ? getText('add') : value,
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
                         color: value == "N/A"
@@ -407,20 +437,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            if (showChangeButton)
-              GestureDetector(
-                onTap: () {
-                  _showChangePasswordDialog(context);
-                },
-                child: Text(
-                  'Change',
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.035,
-                    color: const Color.fromARGB(255, 187, 103, 0),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+              if (showChangeButton)
+          GestureDetector(
+            onTap: () {
+              _showChangePasswordDialog(context);
+            },
+            child: Text(
+                getText('change'),
+              style: TextStyle(
+                fontSize: screenWidth * 0.035,
+                color: const Color.fromARGB(255, 187, 103, 0),
+                fontWeight: FontWeight.w400,
               ),
+            ),
+          )
           ],
         ),
       ),
@@ -452,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 controller: controller,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  labelText: 'Enter Info',
+                  labelText: getText('enterInfo'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
@@ -504,8 +534,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   }
                 },
-                child: const Text(
-                  'Continue',
+                child: Text(
+                  getText('continue'),
                   style: TextStyle(fontSize: 14),
                 ),
               ),
@@ -515,7 +545,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
-
 
 
   void _showChangePasswordDialog(BuildContext context) {
@@ -528,7 +557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
           title: Text(
-            'Changing the password',
+            getText('oldPassword'),
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black,
@@ -540,54 +569,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'Old password',
+                  labelText: getText('oldPassword'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
                   ),
                   border: const OutlineInputBorder(),
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black26),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
-                  ),
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'New password',
+                  labelText: getText('newPassword'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
                   ),
                   border: const OutlineInputBorder(),
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black26),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
-                  ),
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'Repeat new password',
+                  labelText: getText('repeatNewPassword'),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
                   ),
                   border: const OutlineInputBorder(),
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black26),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
-                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -603,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.pop(context);
                   // Add logic to save the new password here.
                 },
-                child: const Text('Save'),
+                child: Text(getText('save')),
               ),
             ],
           ),

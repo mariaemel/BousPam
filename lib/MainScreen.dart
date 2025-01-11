@@ -69,13 +69,13 @@ class _MainScreenState extends State<MainScreen> {
         final data = json.decode(response.body) as List<dynamic>;
 
         if (data.isEmpty) {
-          return {}; // Return an empty map if no operations are found
+          return {};
         }
 
         final Map<String, List<Map<String, dynamic>>> groupedHistory = {};
         for (var operation in data) {
           final dateTime = DateTime.parse(operation['datetime']);
-          final date = dateTime.toLocal().toIso8601String().split('T').first; // Extract and format date
+          final date = dateTime.toLocal().toIso8601String().split('T').first;
           final description = {
             'type': operation['type'],
             'bank_name': operation['bank_name'] ?? 'Unknown Bank',
@@ -107,6 +107,9 @@ class _MainScreenState extends State<MainScreen> {
           'pay': 'Pagar',
           'topUp': 'Recarregar',
           'historyOfOperations': 'Histórico de operações',
+          'type': 'Tipo',
+          'bank': 'Banco',
+          'balanceChange': 'Alteração de saldo',
         }[key]!;
       case 'fr':
         return {
@@ -114,6 +117,9 @@ class _MainScreenState extends State<MainScreen> {
           'pay': 'Payer',
           'topUp': 'Recharger',
           'historyOfOperations': 'Historique des opérations',
+          'type': 'Type',
+          'bank': 'Banque',
+          'balanceChange': 'Changement de solde',
         }[key]!;
       case 'ht':
         return {
@@ -121,6 +127,9 @@ class _MainScreenState extends State<MainScreen> {
           'pay': 'Peye',
           'topUp': 'Refè balans',
           'historyOfOperations': 'Istwa operasyon yo',
+          'type': 'Kalite',
+          'bank': 'Bank',
+          'balanceChange': 'Chanjman nan balans',
         }[key]!;
       case 'es':
         return {
@@ -128,6 +137,9 @@ class _MainScreenState extends State<MainScreen> {
           'pay': 'Pagar',
           'topUp': 'Recargar',
           'historyOfOperations': 'Historial de operaciones',
+          'type': 'Tipo',
+          'bank': 'Banco',
+          'balanceChange': 'Cambio de saldo',
         }[key]!;
       case 'en':
       default:
@@ -136,9 +148,13 @@ class _MainScreenState extends State<MainScreen> {
           'pay': 'Pay',
           'topUp': 'Top up',
           'historyOfOperations': 'History of operations',
+          'type': 'Type',
+          'bank': 'Bank',
+          'balanceChange': 'Balance Change',
         }[key]!;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -238,8 +254,6 @@ class _MainScreenState extends State<MainScreen> {
                         return Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
                         return Center(child: Text('Error loading history: ${snapshot.error}'));
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(child: Text('No history available'));
                       }
 
                       final historyData = snapshot.data!;
@@ -326,14 +340,14 @@ class _MainScreenState extends State<MainScreen> {
       children: [
         Container(
           width: double.infinity,
-          color: Color.fromRGBO(138, 123, 137, 0.8), // Background color
+          color: Color.fromRGBO(138, 123, 137, 0.8),
           padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: screenWidth * 0.03),
           child: Text(
             title,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black, // Text color
+              color: Colors.black,
             ),
           ),
         ),
@@ -366,12 +380,13 @@ class _MainScreenState extends State<MainScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Type: $type', style: TextStyle(fontSize: 16, color: Colors.black)),
-            Text('Bank: $bankName', style: TextStyle(fontSize: 16, color: Colors.black)),
-            Text('Balance Change: $balanceChange', style: TextStyle(fontSize: 16, color: Colors.black)),
+            Text('${getText('type')}: $type', style: TextStyle(fontSize: 16, color: Colors.black)),
+            Text('${getText('bank')}: $bankName', style: TextStyle(fontSize: 16, color: Colors.black)),
+            Text('${getText('balanceChange')}: $balanceChange', style: TextStyle(fontSize: 16, color: Colors.black)),
           ],
         ),
       ),
     );
   }
+
 }
