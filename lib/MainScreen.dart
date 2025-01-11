@@ -31,21 +31,35 @@ class _MainScreenState extends State<MainScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
-          _accountBalance = data['balance'];
-        });
+
+        if (data is num) {
+          setState(() {
+            _accountBalance = data.toDouble();
+          });
+        } else {
+          print("Balance is not a valid number in the response");
+          setState(() {
+            _accountBalance = 0.0;
+          });
+        }
       } else {
-        throw Exception('Error fetching account balance');
+        print('Error fetching account balance: Status Code ${response.statusCode}');
+        setState(() {
+          _accountBalance = 0.0;
+        });
       }
     } catch (e) {
+      print('Exception occurred while fetching account balance: $e');
       setState(() {
         _accountBalance = 0.0;
       });
-      print('Error: $e');
     }
   }
 
-  Future<Map<String, List<String>>> fetchHistory() async {
+
+
+
+  Future<Map<String, List<Map<String, dynamic>>>> fetchHistory() async {
     try {
       final response = await http.get(
         Uri.parse('http://server.bouspam.yusim.space/operations_user/$_userId'),
@@ -53,10 +67,21 @@ class _MainScreenState extends State<MainScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as List<dynamic>;
-        final Map<String, List<String>> groupedHistory = {};
+
+        if (data.isEmpty) {
+          return {}; // Return an empty map if no operations are found
+        }
+
+        final Map<String, List<Map<String, dynamic>>> groupedHistory = {};
         for (var operation in data) {
-          final date = operation['date'];
-          final description = operation['description'];
+          final dateTime = DateTime.parse(operation['datetime']);
+          final date = dateTime.toLocal().toIso8601String().split('T').first; // Extract and format date
+          final description = {
+            'type': operation['type'],
+            'bank_name': operation['bank_name'] ?? 'Unknown Bank',
+            'balance_change': operation['balance_change'],
+          };
+
           if (!groupedHistory.containsKey(date)) {
             groupedHistory[date] = [];
           }
@@ -64,13 +89,15 @@ class _MainScreenState extends State<MainScreen> {
         }
         return groupedHistory;
       } else {
-        throw Exception('Error fetching operations history');
+        throw Exception('Error fetching operations history: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error: $e');
+      print('Error fetching history: $e');
       return {};
     }
   }
+
+
 
   String getText(String key) {
     switch (widget.languageCode) {
@@ -204,13 +231,13 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 SizedBox(height: screenHeight * 0),
                 Expanded(
-                  child: FutureBuilder<Map<String, List<String>>>(
+                  child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
                     future: fetchHistory(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
-                        return Center(child: Text('Error loading history'));
+                        return Center(child: Text('Error loading history: ${snapshot.error}'));
                       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return Center(child: Text('No history available'));
                       }
@@ -232,7 +259,7 @@ class _MainScreenState extends State<MainScreen> {
                       );
                     },
                   ),
-                ),
+                )
               ],
             ),
           ),
@@ -297,14 +324,16 @@ class _MainScreenState extends State<MainScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.only(left: screenWidth * 0.03, bottom: 8),
+        Container(
+          width: double.infinity,
+          color: Color.fromRGBO(138, 123, 137, 0.8), // Background color
+          padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: screenWidth * 0.03),
           child: Text(
             title,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black, // Text color
             ),
           ),
         ),
@@ -313,7 +342,12 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildHistoryItem(String operation) {
+
+  Widget _buildHistoryItem(Map<String, dynamic> operation) {
+    final type = operation['type'];
+    final bankName = operation['bank_name'];
+    final balanceChange = operation['balance_change'];
+
     return Padding(
       padding: EdgeInsets.only(bottom: 8.0),
       child: Container(
@@ -329,9 +363,13 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ],
         ),
-        child: Text(
-          operation,
-          style: TextStyle(fontSize: 16, color: Colors.black),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Type: $type', style: TextStyle(fontSize: 16, color: Colors.black)),
+            Text('Bank: $bankName', style: TextStyle(fontSize: 16, color: Colors.black)),
+            Text('Balance Change: $balanceChange', style: TextStyle(fontSize: 16, color: Colors.black)),
+          ],
         ),
       ),
     );
